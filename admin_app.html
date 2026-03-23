@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PawAdmin — Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:#0d0f14; --surface:#161a22; --surface2:#1e2330; --border:#2a3040;
+    --accent:#f5a623; --accent2:#e07b00; --text:#e8ecf4; --muted:#6b7590;
+    --red:#ff4d4d; --yellow:#f5c842; --green:#4dff91;
+    --red-bg:rgba(255,77,77,0.12); --yellow-bg:rgba(245,200,66,0.12); --green-bg:rgba(77,255,145,0.12);
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(ellipse at 20% 20%,rgba(245,166,35,0.06) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(77,255,145,0.04) 0%,transparent 50%);pointer-events:none;z-index:0}
+
+  .sidebar{position:fixed;left:0;top:0;bottom:0;width:240px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;padding:28px 0}
+  .logo{padding:0 24px 28px;border-bottom:1px solid var(--border)}
+  .logo h1{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent);letter-spacing:-0.5px}
+  .logo span{color:var(--text)} .logo p{font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:1px;text-transform:uppercase}
+  .nav{flex:1;padding:20px 12px;display:flex;flex-direction:column;gap:4px}
+  .nav-btn{display:flex;align-items:center;gap:12px;padding:12px 16px;border:none;border-radius:10px;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;text-align:left;position:relative}
+  .nav-btn:hover{background:var(--surface2);color:var(--text)} .nav-btn.active{background:rgba(245,166,35,0.12);color:var(--accent)}
+  .nav-btn .icon{font-size:18px;width:22px;text-align:center}
+  .nav-btn .badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;border-radius:99px;padding:2px 7px;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+  .main{margin-left:240px;padding:36px 40px;min-height:100vh;position:relative;z-index:1}
+  .page{display:none;animation:fadeIn 0.3s ease} .page.active{display:block}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .page-header{margin-bottom:32px}
+  .page-header h2{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--text)}
+  .page-header p{color:var(--muted);font-size:14px;margin-top:5px}
+  .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+  .dog-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s}
+  .dog-card:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,0.4)}
+  .card-img{width:100%;height:180px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:60px;position:relative;overflow:hidden}
+  .card-img img{width:100%;height:100%;object-fit:cover}
+  .card-body{padding:16px}
+  .card-body h3{font-family:'Syne',sans-serif;font-size:16px;font-weight:700}
+  .card-meta{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+  .tag{font-size:11px;padding:3px 9px;border-radius:99px;background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+  .location-row{display:flex;align-items:flex-start;gap:6px;margin-top:12px;padding:10px 12px;background:var(--surface2);border-radius:8px;font-size:13px;color:var(--accent)}
+  .location-row span{color:var(--text);font-size:12px;line-height:1.4}
+  .status-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;margin-top:8px;text-transform:uppercase;letter-spacing:0.5px}
+  .status-badge.red{background:var(--red-bg);color:var(--red);border:1px solid rgba(255,77,77,0.25)}
+  .status-badge.yellow{background:var(--yellow-bg);color:var(--yellow);border:1px solid rgba(245,200,66,0.25)}
+  .status-badge.green{background:var(--green-bg);color:var(--green);border:1px solid rgba(77,255,145,0.25)}
+  .form-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:560px}
+  .form-group{margin-bottom:20px}
+  .form-group label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px}
+  .form-group input,.form-group select,.form-group textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:12px 16px;outline:none;transition:border-color 0.2s}
+  .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent)}
+  .form-group select option{background:var(--surface2)}
+  .btn-primary{background:var(--accent);color:#0d0f14;border:none;border-radius:10px;padding:13px 28px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:background 0.2s,transform 0.1s;letter-spacing:0.3px}
+  .btn-primary:hover{background:var(--accent2);transform:translateY(-1px)}
+  .request-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:14px;display:flex;align-items:center;gap:20px;transition:transform 0.2s}
+  .request-item:hover{transform:translateX(4px)}
+  .req-avatar{width:48px;height:48px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:22px;border:2px solid var(--border)}
+  .req-info{flex:1} .req-info h4{font-family:'Syne',sans-serif;font-size:15px;font-weight:700} .req-info p{color:var(--muted);font-size:13px;margin-top:3px}
+  .req-actions{display:flex;gap:8px}
+  .btn-accept{background:var(--green-bg);color:var(--green);border:1px solid rgba(77,255,145,0.3);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s}
+  .btn-accept:hover{background:rgba(77,255,145,0.2)}
+  .btn-decline{background:var(--red-bg);color:var(--red);border:1px solid rgba(255,77,77,0.3);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s}
+  .btn-decline:hover{background:rgba(255,77,77,0.2)}
+  .analyze-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:14px}
+  .analyze-header{display:flex;align-items:center;gap:14px}
+  .analyze-avatar{width:54px;height:54px;border-radius:12px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:26px;border:1px solid var(--border);overflow:hidden}
+  .analyze-avatar img{width:100%;height:100%;object-fit:cover}
+  .analyze-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:700} .analyze-breed{color:var(--muted);font-size:13px}
+  .stars{display:flex;gap:6px} .star{font-size:26px;cursor:pointer;filter:grayscale(1);transition:filter 0.15s,transform 0.15s}
+  .star:hover,.star.lit{filter:none;transform:scale(1.15)}
+  .rating-label{font-size:13px;color:var(--muted);margin-top:2px}
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:auto}
+  table{width:100%;border-collapse:collapse}
+  thead{background:var(--surface2)}
+  th{padding:14px 18px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);border-bottom:1px solid var(--border)}
+  td{padding:14px 18px;font-size:14px;border-bottom:1px solid var(--border);vertical-align:middle}
+  tr:last-child td{border-bottom:none} tr:hover td{background:rgba(255,255,255,0.02)}
+  .rating-pip{display:inline-flex;align-items:center;gap:4px;font-weight:600;font-size:13px}
+  .toast{position:fixed;bottom:28px;right:28px;background:var(--surface2);border:1px solid var(--accent);color:var(--text);padding:14px 22px;border-radius:12px;font-size:14px;font-weight:500;z-index:9999;transform:translateY(80px);opacity:0;transition:all 0.3s cubic-bezier(.34,1.56,.64,1)}
+  .toast.show{transform:translateY(0);opacity:1}
+  .empty{text-align:center;padding:60px 20px;color:var(--muted)} .empty .big{font-size:48px;margin-bottom:12px} .empty p{font-size:14px}
+  .reported-badge{position:absolute;top:10px;right:10px;background:rgba(13,15,20,0.85);border:1px solid var(--accent);color:var(--accent);font-size:10px;font-weight:700;padding:3px 10px;border-radius:99px;letter-spacing:0.5px;text-transform:uppercase;backdrop-filter:blur(4px)}
+  .img-preview{width:100%;height:140px;background:var(--surface2);border:2px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:12px;cursor:pointer;transition:border-color 0.2s;overflow:hidden}
+  .img-preview:hover{border-color:var(--accent)} .img-preview img{width:100%;height:100%;object-fit:cover;border-radius:8px}
+  .section-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:16px}
+  .map-thumb{width:100%;height:110px;border-radius:8px;overflow:hidden;margin-top:10px;border:1px solid var(--border)}
+  .map-thumb iframe{width:100%;height:100%;border:none;pointer-events:none}
+
+  /* Collected checkbox */
+  .collect-row{display:flex;align-items:center;gap:10px;margin-top:14px;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);cursor:pointer;transition:all 0.2s;user-select:none}
+  .collect-row:hover{border-color:var(--green);background:var(--green-bg)}
+  .collect-row.checked{border-color:var(--green);background:var(--green-bg)}
+  .collect-row input[type=checkbox]{width:18px;height:18px;accent-color:var(--green);cursor:pointer;flex-shrink:0}
+  .collect-row .cl-label{font-size:13px;font-weight:600;color:var(--muted);transition:color 0.2s}
+  .collect-row.checked .cl-label{color:var(--green)}
+  .collect-time{font-size:11px;color:var(--muted);margin-top:4px}
+  .dog-card.collected{opacity:0.6}
+  .dog-card.collected .card-img::after{content:'✅ COLLECTED';position:absolute;inset:0;background:rgba(13,15,20,0.72);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--green);letter-spacing:1px;backdrop-filter:blur(2px)}
+  .filter-row{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap}
+  .filter-btn{padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s}
+  .filter-btn:hover{border-color:var(--accent);color:var(--text)}
+  .filter-btn.active{background:rgba(245,166,35,0.12);border-color:var(--accent);color:var(--accent)}
+
+  @media(max-width:768px){.sidebar{width:64px}.logo h1,.logo p,.nav-btn span{display:none}.nav-btn{justify-content:center}.main{margin-left:64px;padding:24px 16px}}
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="logo"><h1>🐾 Paw<span>Admin</span></h1><p>Admin Dashboard</p></div>
+  <div class="nav">
+    <button class="nav-btn active" onclick="showPage('locate')" id="btn-locate"><span class="icon">📍</span><span>Locate Dog</span></button>
+    <button class="nav-btn" onclick="showPage('add')" id="btn-add"><span class="icon">➕</span><span>Add Dog</span></button>
+    <button class="nav-btn" onclick="showPage('requests')" id="btn-requests"><span class="icon">📋</span><span>Adoption Requests</span><span class="badge" id="req-badge">0</span></button>
+    <button class="nav-btn" onclick="showPage('analyze')" id="btn-analyze"><span class="icon">⭐</span><span>Analyze Dog</span></button>
+    <button class="nav-btn" onclick="showPage('doglist')" id="btn-doglist"><span class="icon">📊</span><span>Dog List</span></button>
+  </div>
+</nav>
+
+<main class="main">
+  <!-- LOCATE -->
+  <div class="page active" id="page-locate">
+    <div class="page-header"><h2>📍 Locate Reported Dogs</h2><p>Consumer-reported dogs — pinpoint location like an Uber pickup</p></div>
+    <div class="filter-row">
+      <button class="filter-btn active" id="filter-all" onclick="setFilter('all')">All Reports</button>
+      <button class="filter-btn" id="filter-pending" onclick="setFilter('pending')">🔴 Pending</button>
+      <button class="filter-btn" id="filter-collected" onclick="setFilter('collected')">✅ Collected</button>
+    </div>
+    <div class="cards-grid" id="reported-list"></div>
+  </div>
+
+  <!-- ADD DOG -->
+  <div class="page" id="page-add">
+    <div class="page-header"><h2>➕ Add Dog for Adoption</h2><p>List a new dog — appears instantly in the user adoption app</p></div>
+    <div class="form-card">
+      <div class="img-preview" id="add-preview" onclick="document.getElementById('add-img-input').click()"><span>🐶</span></div>
+      <input type="file" id="add-img-input" accept="image/*" style="display:none" onchange="previewImg(this,'add-preview')"/>
+      <div class="form-group"><label>Dog Name</label><input type="text" id="dog-name" placeholder="e.g. Buddy"/></div>
+      <div class="form-group"><label>Age</label><input type="text" id="dog-age" placeholder="e.g. 2 years"/></div>
+      <div class="form-group"><label>Breed</label><input type="text" id="dog-breed" placeholder="e.g. Golden Retriever"/></div>
+      <div class="form-group"><label>Gender</label><select id="dog-gender"><option value="">Select...</option><option>Male</option><option>Female</option></select></div>
+      <div class="form-group"><label>Health Status</label><input type="text" id="dog-health" placeholder="e.g. Vaccinated, Neutered"/></div>
+      <div class="form-group"><label>Description</label><textarea id="dog-desc" rows="3" placeholder="Brief personality or background..."></textarea></div>
+      <button class="btn-primary" onclick="addDog()">Add to Adoption List</button>
+    </div>
+  </div>
+
+  <!-- REQUESTS -->
+  <div class="page" id="page-requests">
+    <div class="page-header"><h2>📋 Adoption Requests</h2><p>Incoming requests from interested adopters</p></div>
+    <div id="requests-list"></div>
+  </div>
+
+  <!-- ANALYZE -->
+  <div class="page" id="page-analyze">
+    <div class="page-header"><h2>⭐ Analyze Dogs</h2><p>Rate each dog's readiness — 1-2 = Not Adoptable · 3 = Trainable · 4-5 = Easily Adoptable</p></div>
+    <div style="display:flex;gap:12px;margin-bottom:28px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:8px;background:var(--red-bg);border:1px solid rgba(255,77,77,0.2);padding:8px 16px;border-radius:8px"><span style="color:var(--red)">🔴</span><span style="font-size:13px;color:var(--red);font-weight:600">1–2: Not Adoptable</span></div>
+      <div style="display:flex;align-items:center;gap:8px;background:var(--yellow-bg);border:1px solid rgba(245,200,66,0.2);padding:8px 16px;border-radius:8px"><span style="color:var(--yellow)">🟡</span><span style="font-size:13px;color:var(--yellow);font-weight:600">3: Trainable</span></div>
+      <div style="display:flex;align-items:center;gap:8px;background:var(--green-bg);border:1px solid rgba(77,255,145,0.2);padding:8px 16px;border-radius:8px"><span style="color:var(--green)">🟢</span><span style="font-size:13px;color:var(--green);font-weight:600">4–5: Easily Adoptable</span></div>
+    </div>
+    <div class="cards-grid" id="analyze-list"></div>
+  </div>
+
+  <!-- DOG LIST TABLE -->
+  <div class="page" id="page-doglist">
+    <div class="page-header"><h2>📊 All Dogs — Registry</h2><p>Complete tabulated list with details and adoptability rating</p></div>
+    <div class="table-wrap">
+      <table><thead><tr><th>#</th><th>Dog</th><th>Name</th><th>Breed</th><th>Age</th><th>Gender</th><th>Health</th><th>Avg Rating</th><th>Status</th></tr></thead>
+      <tbody id="dog-table-body"></tbody></table>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── PawDB (inline) ─────────────────────────────────────────────────────────
+const PawDB = {
+  getDogs(){return JSON.parse(localStorage.getItem('paw_dogs')||'[]')},
+  saveDogs(d){localStorage.setItem('paw_dogs',JSON.stringify(d))},
+  addDog(dog){const d=this.getDogs();dog.id=Date.now();dog.ratings=dog.ratings||[];d.push(dog);this.saveDogs(d);return dog},
+  rateDog(id,val){const d=this.getDogs();const x=d.find(x=>x.id===id);if(x){x.ratings.push(val);this.saveDogs(d)}},
+  getReported(){return JSON.parse(localStorage.getItem('paw_reported')||'[]')},
+  saveReported(l){localStorage.setItem('paw_reported',JSON.stringify(l))},
+  toggleCollected(id){const l=this.getReported();const r=l.find(r=>r.id===id);if(r){r.collected=!r.collected;r.collectedAt=r.collected?new Date().toLocaleString():null;this.saveReported(l);}return r},
+  getRequests(){return JSON.parse(localStorage.getItem('paw_requests')||'[]')},
+  saveRequests(l){localStorage.setItem('paw_requests',JSON.stringify(l))},
+  updateRequest(id,status){const l=this.getRequests();const r=l.find(r=>r.id===id);if(r){r.status=status;this.saveRequests(l)}},
+  getRatingInfo(ratings){
+    if(!ratings||!ratings.length)return{avg:null,color:'',label:'Unrated',dot:'⚪'};
+    const avg=(ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(1);
+    const v=parseFloat(avg);
+    if(v<=2)return{avg,color:'red',label:'Not Adoptable',dot:'🔴'};
+    if(v<4)return{avg,color:'yellow',label:'Trainable',dot:'🟡'};
+    return{avg,color:'green',label:'Easily Adoptable',dot:'🟢'};
+  },
+  seed(){
+    if(!this.getDogs().length){
+      this.addDog({name:'Max',age:'3 years',breed:'Labrador',gender:'Male',health:'Vaccinated',desc:'Playful and energetic',emoji:'🐕',img:null,ratings:[]});
+      this.addDog({name:'Luna',age:'1 year',breed:'Beagle',gender:'Female',health:'Neutered, Vaccinated',desc:'Gentle and calm',emoji:'🐶',img:null,ratings:[4,5]});
+      this.addDog({name:'Bruno',age:'5 years',breed:'German Shepherd',gender:'Male',health:'Vaccinated',desc:'Loyal and protective',emoji:'🐕‍🦺',img:null,ratings:[3]});
+    }
+    if(!this.getReported().length){
+      const l=[];
+      l.push({id:Date.now()-1,location:'Anna Nagar, Chennai, Tamil Nadu',lat:13.0843,lng:80.2101,reportedBy:'User',time:new Date().toLocaleString(),description:'Brown stray near the park entrance',img:null,emoji:'🐕‍🦺'});
+      localStorage.setItem('paw_reported',JSON.stringify(l));
+    }
+    if(!this.getRequests().length){
+      const dogs=this.getDogs();
+      const l=[{id:Date.now(),name:'Priya Ramesh',dog:'Max',dogId:dogs[0]?.id,contact:'priya@email.com',msg:'I have a big yard and have owned dogs before.',status:'pending'}];
+      localStorage.setItem('paw_requests',JSON.stringify(l));
+    }
+  }
+};
+PawDB.seed();
+
+// ── NAV ────────────────────────────────────────────────────────────────────
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('btn-'+name).classList.add('active');
+  if(name==='locate')renderLocate();
+  if(name==='requests')renderRequests();
+  if(name==='analyze')renderAnalyze();
+  if(name==='doglist')renderDogTable();
+}
+
+// ── LOCATE ─────────────────────────────────────────────────────────────────
+let locateFilter='all';
+function setFilter(f){
+  locateFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('filter-'+f).classList.add('active');
+  renderLocate();
+}
+
+function toggleCollected(id){
+  const r=PawDB.toggleCollected(id);
+  showToast(r.collected?`✅ Dog marked as collected!`:`↩️ Marked as not yet collected`);
+  renderLocate();
+}
+
+function renderLocate(){
+  const el=document.getElementById('reported-list');
+  let list=PawDB.getReported();
+  if(locateFilter==='pending') list=list.filter(d=>!d.collected);
+  if(locateFilter==='collected') list=list.filter(d=>d.collected);
+  if(!list.length){
+    const msg=locateFilter==='collected'?'No dogs collected yet.':locateFilter==='pending'?'All dogs have been collected! 🎉':'No reported dogs yet.';
+    el.innerHTML=`<div class="empty"><div class="big">📍</div><p>${msg}</p></div>`;return;
+  }
+  el.innerHTML=list.map(d=>`
+    <div class="dog-card ${d.collected?'collected':''}">
+      <div class="card-img" style="position:relative">
+        ${d.img?`<img src="${d.img}" alt="Reported dog"/>`:`<span style="font-size:60px">${d.emoji||'🐕'}</span>`}
+        <div class="reported-badge" style="${d.collected?'border-color:var(--green);color:var(--green)':''}">
+          ${d.collected?'✅ Collected':'📸 Reported'}
+        </div>
+      </div>
+      <div class="card-body">
+        <h3 style="color:var(--accent)">📌 Pickup Location</h3>
+        <div class="location-row">📍 <span>${d.location}</span></div>
+        ${d.lat&&d.lng?`<div class="map-thumb"><iframe src="https://maps.google.com/maps?q=${d.lat},${d.lng}&z=16&output=embed" allowfullscreen loading="lazy"></iframe></div>`:''}
+        <div style="margin-top:10px;font-size:13px;color:var(--muted)">${d.description||''}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+          <span style="font-size:11px;color:var(--muted)">By: ${d.reportedBy||'User'}</span>
+          <span style="font-size:11px;color:var(--muted)">${d.time||''}</span>
+        </div>
+        <label class="collect-row ${d.collected?'checked':''}" onclick="toggleCollected(${d.id})">
+          <input type="checkbox" ${d.collected?'checked':''} onclick="event.stopPropagation();toggleCollected(${d.id})"/>
+          <div>
+            <div class="cl-label">${d.collected?'Dog has been collected ✅':'Mark as Collected'}</div>
+            ${d.collected&&d.collectedAt?`<div class="collect-time">Collected at: ${d.collectedAt}</div>`:''}
+          </div>
+        </label>
+      </div>
+    </div>`).join('');
+}
+
+// ── ADD DOG ────────────────────────────────────────────────────────────────
+let addImgData=null;
+function previewImg(input,previewId){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{document.getElementById(previewId).innerHTML=`<img src="${e.target.result}"/>`;addImgData=e.target.result};
+  reader.readAsDataURL(file);
+}
+function addDog(){
+  const name=document.getElementById('dog-name').value.trim();
+  const age=document.getElementById('dog-age').value.trim();
+  const breed=document.getElementById('dog-breed').value.trim();
+  if(!name||!age||!breed){showToast('⚠️ Please fill in Name, Age, and Breed.');return}
+  PawDB.addDog({name,age,breed,gender:document.getElementById('dog-gender').value,health:document.getElementById('dog-health').value.trim(),desc:document.getElementById('dog-desc').value.trim(),emoji:'🐾',img:addImgData,ratings:[]});
+  ['dog-name','dog-age','dog-breed','dog-health','dog-desc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('dog-gender').value='';
+  document.getElementById('add-preview').innerHTML='<span>🐶</span>';
+  addImgData=null;
+  showToast(`✅ ${name} added to the adoption list!`);
+}
+
+// ── REQUESTS ───────────────────────────────────────────────────────────────
+function renderRequests(){
+  const el=document.getElementById('requests-list');
+  const list=PawDB.getRequests();
+  const pending=list.filter(r=>r.status==='pending').length;
+  const badge=document.getElementById('req-badge');
+  badge.textContent=pending;badge.style.display=pending?'':'none';
+  if(!list.length){el.innerHTML=`<div class="empty"><div class="big">📋</div><p>No adoption requests yet.</p></div>`;return}
+  el.innerHTML=list.map(r=>`
+    <div class="request-item" id="req-${r.id}">
+      <div class="req-avatar">👤</div>
+      <div class="req-info">
+        <h4>${r.name}</h4>
+        <p>Requesting: <strong style="color:var(--accent)">${r.dog}</strong> &nbsp;·&nbsp; ${r.contact}</p>
+        <p style="margin-top:6px;font-size:12px;color:var(--muted)">"${r.msg}"</p>
+      </div>
+      ${r.status==='pending'?`
+        <div class="req-actions">
+          <button class="btn-accept" onclick="handleReq(${r.id},'accepted')">✓ Accept</button>
+          <button class="btn-decline" onclick="handleReq(${r.id},'declined')">✕ Decline</button>
+        </div>`:`
+        <span style="font-size:13px;font-weight:600;color:${r.status==='accepted'?'var(--green)':'var(--red)'}">
+          ${r.status==='accepted'?'✓ Accepted':'✕ Declined'}</span>`}
+    </div>`).join('');
+}
+function handleReq(id,action){
+  const list=PawDB.getRequests();
+  const r=list.find(r=>r.id===id);
+  PawDB.updateRequest(id,action);
+  renderRequests();
+  showToast(action==='accepted'?`✅ Request from ${r?.name} accepted!`:`❌ Request from ${r?.name} declined.`);
+}
+
+// ── ANALYZE ────────────────────────────────────────────────────────────────
+const selectedRating={};
+function renderAnalyze(){
+  const el=document.getElementById('analyze-list');
+  const dogs=PawDB.getDogs();
+  if(!dogs.length){el.innerHTML=`<div class="empty"><div class="big">⭐</div><p>No dogs to analyze yet.</p></div>`;return}
+  el.innerHTML=dogs.map(d=>{
+    const {avg,color,label,dot}=PawDB.getRatingInfo(d.ratings);
+    return`<div class="analyze-card">
+      <div class="analyze-header">
+        <div class="analyze-avatar">${d.img?`<img src="${d.img}"/>`:(d.emoji||'🐾')}</div>
+        <div>
+          <div class="analyze-name">${d.name}</div>
+          <div class="analyze-breed">${d.breed} · ${d.age}</div>
+          ${avg?`<span class="status-badge ${color}">${dot} ${label}</span>`:''}
+        </div>
+        ${avg?`<div style="margin-left:auto;font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--accent)">${avg}</div>`:''}
+      </div>
+      <div>
+        <div class="section-title">Rate this dog</div>
+        <div class="stars" id="stars-${d.id}">
+          ${[1,2,3,4,5].map(i=>`<span class="star ${avg&&Math.round(parseFloat(avg))>=i?'lit':''}"
+            onclick="rateDog(${d.id},${i})"
+            onmouseover="hoverStar(${d.id},${i})"
+            onmouseout="resetStars(${d.id},'${avg}')">⭐</span>`).join('')}
+        </div>
+        <div class="rating-label">${d.ratings.length?`${d.ratings.length} rating(s) · avg ${avg}`:'No ratings yet'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function hoverStar(dogId,val){
+  document.querySelectorAll(`#stars-${dogId} .star`).forEach((s,i)=>s.style.filter=i<val?'none':'grayscale(1)');
+  selectedRating[dogId]=val;
+}
+function resetStars(dogId,avg){
+  const r=avg?Math.round(parseFloat(avg)):0;
+  document.querySelectorAll(`#stars-${dogId} .star`).forEach((s,i)=>s.style.filter=i<r?'none':'grayscale(1)');
+}
+function rateDog(dogId,val){
+  if(!val||val<1)return;
+  const dog=PawDB.getDogs().find(d=>d.id===dogId);
+  if(!dog)return;
+  PawDB.rateDog(dogId,val);
+  showToast(`⭐ Rated ${dog.name} with ${val} star${val>1?'s':''}!`);
+  renderAnalyze();renderDogTable();
+}
+
+// ── DOG TABLE ──────────────────────────────────────────────────────────────
+function renderDogTable(){
+  const tbody=document.getElementById('dog-table-body');
+  const dogs=PawDB.getDogs();
+  if(!dogs.length){tbody.innerHTML=`<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--muted)">No dogs added yet.</td></tr>`;return}
+  tbody.innerHTML=dogs.map((d,i)=>{
+    const {avg,color,label,dot}=PawDB.getRatingInfo(d.ratings);
+    return`<tr>
+      <td style="color:var(--muted);font-size:13px">${i+1}</td>
+      <td>${d.img?`<img src="${d.img}" style="width:36px;height:36px;border-radius:8px;object-fit:cover;"/>`:(d.emoji||'🐾')}</td>
+      <td><strong style="font-family:'Syne',sans-serif">${d.name}</strong></td>
+      <td style="color:var(--muted)">${d.breed}</td>
+      <td style="color:var(--muted)">${d.age}</td>
+      <td style="color:var(--muted)">${d.gender||'—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${d.health||'—'}</td>
+      <td>${avg?`<span class="rating-pip" style="color:var(--accent)">⭐ ${avg}</span><span style="font-size:11px;color:var(--muted);margin-left:4px">(${d.ratings.length})</span>`:`<span style="color:var(--muted);font-size:12px">Unrated</span>`}</td>
+      <td><span class="status-badge ${color}">${dot} ${label}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+renderLocate();renderRequests();renderDogTable();
+
+// Live-reload from user app every 5s
+setInterval(()=>{
+  if(document.getElementById('page-locate').classList.contains('active'))renderLocate();
+  if(document.getElementById('page-requests').classList.contains('active'))renderRequests();
+},5000);
+</script>
+</body>
+</html>
